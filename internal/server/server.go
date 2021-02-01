@@ -18,5 +18,6 @@ func Run() {
 		proxy.ProxyRequest(writer, request)
 	})
 
+	log.Printf("starting http server...")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
