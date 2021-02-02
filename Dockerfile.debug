@@ -9,7 +9,7 @@ RUN go get github.com/go-delve/delve/cmd/dlv
 
 COPY . .
 
-RUN GOOS=linux GO111MODULE=on go build -i -v -a -installsuffix cgo -o /app couchdb-proxy/cmd/server
+RUN GOOS=linux GO111MODULE=on go build -gcflags="all=-N -l" -o /app couchdb-proxy/cmd/server
 
 ###
 

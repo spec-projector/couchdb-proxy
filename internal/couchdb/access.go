@@ -46,6 +46,10 @@ func isAccessAllowed(database string, auth string) (allowed bool, err error) {
 		return
 	}
 
+	if database == "" {
+		return true, nil
+	}
+
 	allowed, err = checkProjectAccess(conn, database, userId)
 
 	return
