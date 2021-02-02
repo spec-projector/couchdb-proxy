@@ -9,7 +9,6 @@ import (
 )
 
 const (
-	authorizationHeader = "Authorization"
 	tokenExpirationDays = 30
 )
 

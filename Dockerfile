@@ -10,6 +10,8 @@ COPY . .
 
 RUN GOOS=linux GO111MODULE=on go build -i -v -a -installsuffix cgo -o app couchdb-proxy/cmd/server
 
+###
+
 FROM alpine:3.7
 RUN apk add --no-cache ca-certificates=20190108-r0
 WORKDIR /root

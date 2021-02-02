@@ -14,6 +14,11 @@ const (
 	paramCouchDbRoles = "couchdb_roles"
 )
 
+const (
+	authorizationHeader = "Authorization"
+	authorizationPrefix = "Bearer "
+)
+
 var couchDbParams = []string{paramCouchDbUrl, paramCouchDbUser, paramCouchDbRoles}
 
 type couchDbConfig struct {
@@ -33,6 +38,8 @@ func (proxy *CouchDbProxy) ProxyRequest(writer http.ResponseWriter, request *htt
 		writer.WriteHeader(http.StatusUnauthorized)
 		return
 	}
+
+	auth = strings.TrimPrefix(auth, authorizationPrefix)
 
 	parts := strings.Split(request.RequestURI, "/")
 	if len(parts) <= 1 {
