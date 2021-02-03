@@ -4,7 +4,6 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/spf13/viper"
 	"log"
-	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -57,18 +56,7 @@ func NewCouchDbProxy() *CouchDbProxy {
 	log.Printf("create couchdb proxy: url=%s, user=%s", config.Url, config.User)
 
 	reverseProxy := httputil.NewSingleHostReverseProxy(config.Url)
-	reverseProxy.Transport = &http.Transport{
-		Proxy: http.ProxyFromEnvironment,
-		DialContext: (&net.Dialer{
-			Timeout:   30 * time.Second,
-			KeepAlive: 60 * time.Second,
-		}).DialContext,
-		ForceAttemptHTTP2:     true,
-		MaxIdleConns:          100,
-		IdleConnTimeout:       90 * time.Second,
-		TLSHandshakeTimeout:   10 * time.Second,
-		ExpectContinueTimeout: 1 * time.Second,
-	}
+	reverseProxy.FlushInterval = 500 * time.Millisecond
 
 	return &CouchDbProxy{
 		config:       config,
