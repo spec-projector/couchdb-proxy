@@ -4,9 +4,11 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/spf13/viper"
 	"log"
+	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"time"
 )
 
 const (
@@ -24,8 +26,8 @@ type couchDbConfig struct {
 }
 
 type CouchDbProxy struct {
-	config *couchDbConfig
-	proxy  *httputil.ReverseProxy
+	config       *couchDbConfig
+	reverseProxy *httputil.ReverseProxy
 }
 
 type ForbiddenError struct{}
@@ -45,8 +47,7 @@ func (proxy *CouchDbProxy) ProxyRequest(pool *pgxpool.Pool, authToken string, da
 	request.Header["X-Auth-CouchDB-Roles"] = []string{proxy.config.Roles}
 	request.Header["X-Auth-CouchDB-UserName"] = []string{proxy.config.User}
 
-	proxy.proxy.ServeHTTP(writer, request)
-
+	proxy.reverseProxy.ServeHTTP(writer, request)
 	return
 }
 
@@ -55,9 +56,23 @@ func NewCouchDbProxy() *CouchDbProxy {
 
 	log.Printf("create couchdb proxy: url=%s, user=%s", config.Url, config.User)
 
+	reverseProxy := httputil.NewSingleHostReverseProxy(config.Url)
+	reverseProxy.Transport = &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		DialContext: (&net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 60 * time.Second,
+		}).DialContext,
+		ForceAttemptHTTP2:     true,
+		MaxIdleConns:          100,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+	}
+
 	return &CouchDbProxy{
-		config: config,
-		proxy:  httputil.NewSingleHostReverseProxy(config.Url),
+		config:       config,
+		reverseProxy: reverseProxy,
 	}
 }
 
