@@ -8,6 +8,8 @@ import (
 	"net/http"
 )
 
+const serverPort = ":8080"
+
 func init() {
 	viper.SetEnvPrefix("proxy")
 }
@@ -20,6 +22,6 @@ func Run() {
 		proxy.ProxyRequest(pgPool, writer, request)
 	})
 
-	log.Printf("starting http server...")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Printf("starting http server on port %s ...", serverPort)
+	log.Fatal(http.ListenAndServe(serverPort, nil))
 }
