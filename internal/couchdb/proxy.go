@@ -7,18 +7,12 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"strings"
 )
 
 const (
 	paramCouchDbUrl   = "couchdb_url"
 	paramCouchDbUser  = "couchdb_user"
 	paramCouchDbRoles = "couchdb_roles"
-)
-
-const (
-	authorizationHeader = "Authorization"
-	authorizationPrefix = "Bearer "
 )
 
 var couchDbParams = []string{paramCouchDbUrl, paramCouchDbUser, paramCouchDbRoles}
@@ -34,35 +28,26 @@ type CouchDbProxy struct {
 	proxy  *httputil.ReverseProxy
 }
 
-func (proxy *CouchDbProxy) ProxyRequest(pgPool *pgxpool.Pool, writer http.ResponseWriter, request *http.Request) {
-	auth := request.Header.Get(authorizationHeader)
-	if auth == "" {
-		writer.WriteHeader(http.StatusUnauthorized)
-		return
-	}
+type ForbiddenError struct{}
 
-	auth = strings.TrimPrefix(auth, authorizationPrefix)
+func (err *ForbiddenError) Error() string { return "Forbidden" }
 
-	parts := strings.Split(request.RequestURI, "/")
-	if len(parts) <= 1 {
-		writer.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	allowed, err := isAccessAllowed(pgPool, parts[1], auth)
+func (proxy *CouchDbProxy) ProxyRequest(pool *pgxpool.Pool, authToken string, database string, writer http.ResponseWriter, request *http.Request) (err error) {
+	allowed, err := isAccessAllowed(pool, database, authToken)
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	if !allowed {
-		writer.WriteHeader(http.StatusForbidden)
-		return
+		return &ForbiddenError{}
 	}
+
 	request.Header["X-Auth-CouchDB-Roles"] = []string{proxy.config.Roles}
 	request.Header["X-Auth-CouchDB-UserName"] = []string{proxy.config.User}
 
 	proxy.proxy.ServeHTTP(writer, request)
+
+	return
 }
 
 func NewCouchDbProxy() *CouchDbProxy {
