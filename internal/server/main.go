@@ -1,8 +1,8 @@
 package server
 
 import (
-	"couchdb-proxy/internal/couchdb"
 	"couchdb-proxy/internal/pg"
+	"couchdb-proxy/internal/proxy"
 	"errors"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/spf13/viper"
@@ -17,7 +17,7 @@ const (
 	authPrefix = "Bearer "
 )
 
-var proxy *couchdb.CouchDbProxy
+var couchDbProxy *proxy.CouchDbProxy
 var pgPool *pgxpool.Pool
 
 func Run() {
@@ -30,7 +30,7 @@ func Run() {
 func init() {
 	viper.SetEnvPrefix("proxy")
 
-	proxy = couchdb.NewCouchDbProxy()
+	couchDbProxy = proxy.NewCouchDbProxy()
 	pgPool = pg.GetConnectionPool()
 }
 
@@ -43,10 +43,10 @@ func handler(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	err = proxy.ProxyRequest(pgPool, authToken, database, writer, request)
+	err = couchDbProxy.ProxyRequest(pgPool, authToken, database, writer, request)
 	if err != nil {
 		switch err.(type) {
-		case *couchdb.ForbiddenError:
+		case *proxy.ForbiddenError:
 			writer.WriteHeader(http.StatusForbidden)
 		default:
 			http.Error(writer, err.Error(), http.StatusInternalServerError)

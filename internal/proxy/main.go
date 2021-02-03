@@ -1,4 +1,4 @@
-package couchdb
+package proxy
 
 import (
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -53,7 +53,7 @@ func (proxy *CouchDbProxy) ProxyRequest(pool *pgxpool.Pool, authToken string, da
 func NewCouchDbProxy() *CouchDbProxy {
 	config := readCouchDbConfig()
 
-	log.Printf("create couchdb proxy: url=%s, user=%s", config.Url, config.User)
+	log.Printf("create proxy proxy: url=%s, user=%s", config.Url, config.User)
 
 	reverseProxy := httputil.NewSingleHostReverseProxy(config.Url)
 	reverseProxy.FlushInterval = 500 * time.Millisecond
@@ -72,7 +72,7 @@ func readCouchDbConfig() *couchDbConfig {
 		}
 	}
 
-	viper.SetDefault(paramCouchDbUrl, "http://couchdb:5984")
+	viper.SetDefault(paramCouchDbUrl, "http://proxy:5984")
 	viper.SetDefault(paramCouchDbUser, "admin")
 	viper.SetDefault(paramCouchDbRoles, "_admin")
 
