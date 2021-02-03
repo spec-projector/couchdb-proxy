@@ -23,7 +23,7 @@ services:
   proxy:
     build:
       context: ../
-      dockerfile: Dockerfile.debug
+      dockerfile: ./develop/Dockerfile
     ports:
       - 40000:40000
     environment:

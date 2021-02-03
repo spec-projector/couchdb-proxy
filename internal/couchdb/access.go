@@ -29,31 +29,58 @@ const (
 		 			)
 		       )
 	`
+	isPublicProjectSql = `
+		SELECT count(*)
+		FROM projects_project projects
+		WHERE projects.db_name = $1 AND projects.is_public
+	`
 )
 
 func isAccessAllowed(pgPool *pgxpool.Pool, database string, auth string) (allowed bool, err error) {
+	if database == "" {
+		return true, nil
+	}
+
 	conn, err := pgPool.Acquire(context.Background())
 	if err != nil {
 		return
 	}
 	defer conn.Release()
 
-	userId, err := retrieveUser(conn, auth)
+	if auth == "" {
+		allowed, err = checkAnonymousAccess(conn, database)
+	} else {
+		allowed, err = checkAuthenticatedAccess(conn, database, auth)
+	}
+
+	return
+}
+
+func checkAnonymousAccess(conn *pgxpool.Conn, database string) (allowed bool, err error) {
+	var rowsCount *int
+	err = conn.QueryRow(context.Background(), isPublicProjectSql, database).Scan(&rowsCount)
+	if err != nil {
+		return
+	}
+	return *rowsCount > 0, nil
+}
+
+func checkAuthenticatedAccess(conn *pgxpool.Conn, database string, auth string) (allowed bool, err error) {
+	user, err := retrieveUser(conn, auth)
 	if err != nil {
 		return
 	}
 
-	if userId == -1 {
+	if user == -1 {
 		return
 	}
 
-	if database == "" {
-		return true, nil
+	var rowsCount *int
+	err = conn.QueryRow(context.Background(), checkProjectAccessSql, database, user).Scan(&rowsCount)
+	if err != nil {
+		return
 	}
-
-	allowed, err = checkProjectAccess(conn, database, userId)
-
-	return
+	return *rowsCount > 0, nil
 }
 
 func retrieveUser(conn *pgxpool.Conn, auth string) (user int, err error) {
@@ -69,13 +96,4 @@ func retrieveUser(conn *pgxpool.Conn, auth string) (user int, err error) {
 		return
 	}
 	return *userId, nil
-}
-
-func checkProjectAccess(conn *pgxpool.Conn, database string, user int) (allowed bool, err error) {
-	var rowsCount *int
-	err = conn.QueryRow(context.Background(), checkProjectAccessSql, database, user).Scan(&rowsCount)
-	if err != nil {
-		return
-	}
-	return *rowsCount > 0, nil
 }

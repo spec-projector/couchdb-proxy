@@ -36,7 +36,10 @@ func (config *pgConfig) GetConnectionString() string {
 func GetConnectionPool() *pgxpool.Pool {
 	config := readPgConfig()
 
-	log.Printf("create pg pool: host=%s, port=%d, user=%s, db=%s", config.Host, config.Port, config.User, config.Database)
+	log.Printf(
+		"create pg pool: host=%s, port=%d, user=%s, db=%s",
+		config.Host, config.Port, config.User, config.Database,
+	)
 
 	poolConfig, err := pgxpool.ParseConfig(config.GetConnectionString())
 	if err != nil {

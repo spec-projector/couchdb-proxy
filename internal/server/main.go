@@ -36,10 +36,6 @@ func init() {
 
 func handler(writer http.ResponseWriter, request *http.Request) {
 	authToken := extractAuthToken(request)
-	if authToken == "" {
-		writer.WriteHeader(http.StatusUnauthorized)
-		return
-	}
 
 	database, err := extractDatabase(request)
 	if err != nil {
@@ -60,15 +56,14 @@ func handler(writer http.ResponseWriter, request *http.Request) {
 
 func extractAuthToken(request *http.Request) string {
 	auth := request.Header.Get(authHeader)
-	auth = strings.TrimPrefix(auth, authPrefix)
 
-	return auth
+	return strings.TrimPrefix(auth, authPrefix)
 }
 
 func extractDatabase(request *http.Request) (string, error) {
 	parts := strings.Split(request.RequestURI, "/")
 	if len(parts) <= 1 {
-		return "", errors.New("Can't determine database")
+		return "", errors.New("can't determine database")
 	}
 
 	return parts[1], nil
