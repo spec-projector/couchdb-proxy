@@ -1,6 +1,7 @@
 package couchdb
 
 import (
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/spf13/viper"
 	"log"
 	"net/http"
@@ -33,7 +34,7 @@ type CouchDbProxy struct {
 	proxy  *httputil.ReverseProxy
 }
 
-func (proxy *CouchDbProxy) ProxyRequest(writer http.ResponseWriter, request *http.Request) {
+func (proxy *CouchDbProxy) ProxyRequest(pgPool *pgxpool.Pool, writer http.ResponseWriter, request *http.Request) {
 	auth := request.Header.Get(authorizationHeader)
 	if auth == "" {
 		writer.WriteHeader(http.StatusUnauthorized)
@@ -48,9 +49,8 @@ func (proxy *CouchDbProxy) ProxyRequest(writer http.ResponseWriter, request *htt
 		return
 	}
 
-	allowed, err := isAccessAllowed(parts[1], auth)
+	allowed, err := isAccessAllowed(pgPool, parts[1], auth)
 	if err != nil {
-		log.Println("couchdb proxy: ", err)
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}

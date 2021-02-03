@@ -2,7 +2,6 @@ package couchdb
 
 import (
 	"context"
-	"couchdb-proxy/internal/pg"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"time"
@@ -13,24 +12,27 @@ const (
 )
 
 const (
-	getAuthUserSql = "SELECT user_id " +
-		"FROM users_token tokens " +
-		"WHERE tokens.key = $1 AND tokens.created > $2"
-	checkProjectAccessSql = "SELECT count(*) " +
-		"FROM projects_project projects " +
-		"WHERE projects.db_name = $1 " +
-		"  AND (projects.is_public " +
-		"		OR projects.owner_id = $2 " +
-		"		OR EXISTS (SELECT 1 " +
-		"				FROM projects_projectmember members " +
-		"				WHERE members.project_id = projects.id AND members.user_id = $2" +
-		" 			) " +
-		"       )"
+	getAuthUserSql = `
+		SELECT user_id
+		FROM users_token tokens 
+		WHERE tokens.key = $1 AND tokens.created > $2
+	`
+	checkProjectAccessSql = `
+		SELECT count(*)
+		FROM projects_project projects
+		WHERE projects.db_name = $1
+			AND (projects.is_public
+				OR projects.owner_id = $2
+				OR EXISTS (SELECT 1 
+						FROM projects_projectmember members
+						WHERE members.project_id = projects.id AND members.user_id = $2
+		 			)
+		       )
+	`
 )
 
-func isAccessAllowed(database string, auth string) (allowed bool, err error) {
-	dbpool := pg.GetConnectionPool()
-	conn, err := dbpool.Acquire(context.Background())
+func isAccessAllowed(pgPool *pgxpool.Pool, database string, auth string) (allowed bool, err error) {
+	conn, err := pgPool.Acquire(context.Background())
 	if err != nil {
 		return
 	}

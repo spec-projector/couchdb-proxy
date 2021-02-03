@@ -6,7 +6,6 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/spf13/viper"
 	"log"
-	"sync"
 )
 
 const (
@@ -34,24 +33,24 @@ func (config *pgConfig) GetConnectionString() string {
 	)
 }
 
-var connectionPool *pgxpool.Pool
-
 func GetConnectionPool() *pgxpool.Pool {
-	var once sync.Once
-	once.Do(func() {
-		config := readPgConfig()
+	config := readPgConfig()
 
-		log.Printf("connect to pg: host=%s, port=%d, user=%s, db=%s", config.Host, config.Port, config.User, config.Database)
+	log.Printf("create pg pool: host=%s, port=%d, user=%s, db=%s", config.Host, config.Port, config.User, config.Database)
 
-		connString := config.GetConnectionString()
-		var err error
-		connectionPool, err = pgxpool.Connect(context.Background(), connString)
-		if err != nil {
-			panic(err)
-		}
-	})
+	poolConfig, err := pgxpool.ParseConfig(config.GetConnectionString())
+	if err != nil {
+		panic(err)
+	}
 
-	return connectionPool
+	poolConfig.ConnConfig.PreferSimpleProtocol = true
+
+	pool, err := pgxpool.ConnectConfig(context.Background(), poolConfig)
+	if err != nil {
+		panic(err)
+	}
+
+	return pool
 }
 
 func readPgConfig() *pgConfig {
