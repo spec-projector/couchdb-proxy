@@ -2,6 +2,7 @@ package couchdb
 
 import (
 	"github.com/spf13/viper"
+	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -49,6 +50,7 @@ func (proxy *CouchDbProxy) ProxyRequest(writer http.ResponseWriter, request *htt
 
 	allowed, err := isAccessAllowed(parts[1], auth)
 	if err != nil {
+		log.Println("couchdb proxy: ", err)
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -65,6 +67,8 @@ func (proxy *CouchDbProxy) ProxyRequest(writer http.ResponseWriter, request *htt
 
 func NewCouchDbProxy() *CouchDbProxy {
 	config := readCouchDbConfig()
+
+	log.Printf("create couchdb proxy: url=%s, user=%s", config.Url, config.User)
 
 	return &CouchDbProxy{
 		config: config,

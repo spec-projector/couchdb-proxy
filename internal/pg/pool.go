@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/spf13/viper"
+	"log"
 	"sync"
 )
 
@@ -38,8 +39,11 @@ var connectionPool *pgxpool.Pool
 func GetConnectionPool() *pgxpool.Pool {
 	var once sync.Once
 	once.Do(func() {
-		pgConfig := readPgConfig()
-		connString := pgConfig.GetConnectionString()
+		config := readPgConfig()
+
+		log.Printf("connect to pg: host=%s, port=%d, user=%s, db=%s", config.Host, config.Port, config.User, config.Database)
+
+		connString := config.GetConnectionString()
 		var err error
 		connectionPool, err = pgxpool.Connect(context.Background(), connString)
 		if err != nil {
