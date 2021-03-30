@@ -47,6 +47,7 @@ func (proxy *CouchDbProxy) ProxyRequest(pool *pgxpool.Pool, authToken string, da
 	request.Header["X-Auth-CouchDB-UserName"] = []string{proxy.config.User}
 
 	proxy.reverseProxy.ServeHTTP(writer, request)
+	writer.Header().Set("Access-Control-Allow-Credentials", "true")
 	return
 }
 
@@ -72,7 +73,7 @@ func readCouchDbConfig() *couchDbConfig {
 		}
 	}
 
-	viper.SetDefault(paramCouchDbUrl, "http://proxy:5984")
+	viper.SetDefault(paramCouchDbUrl, "http://couchdb:5984")
 	viper.SetDefault(paramCouchDbUser, "admin")
 	viper.SetDefault(paramCouchDbRoles, "_admin")
 
