@@ -46,6 +46,8 @@ func (proxy *CouchDbProxy) ProxyRequest(pool *pgxpool.Pool, authToken string, da
 	request.Header["X-Auth-CouchDB-Roles"] = []string{proxy.config.Roles}
 	request.Header["X-Auth-CouchDB-UserName"] = []string{proxy.config.User}
 
+	log.Printf("proxy request: auth=%s, databse=%s", authToken, database)
+
 	proxy.reverseProxy.ServeHTTP(writer, request)
 	return
 }
