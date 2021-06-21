@@ -36,6 +36,9 @@ func init() {
 
 func handler(writer http.ResponseWriter, request *http.Request) {
 	authToken := extractAuthToken(request)
+	if authToken == "" {
+		writer.WriteHeader(http.StatusForbidden)
+	}
 
 	database, err := extractDatabase(request)
 	if err != nil {
